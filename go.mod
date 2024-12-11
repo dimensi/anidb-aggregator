@@ -1,3 +1,3 @@
-module anime365/ichime-saver
+module dimensi/anidb-aggregator
 
 go 1.23.4
