@@ -157,10 +157,10 @@ func mapToResultAnime(a365 anime365.Data, shiki shikimori.Data, hasShiki bool,
 		Season:           a365.Season,
 		NumberOfEpisodes: int(a365.NumberOfEpisodes),
 		Titles: map[string]string{
-			"en":     a365.Titles.En,
-			"ja":     a365.Titles.Ja,
-			"romaji": a365.Titles.Romaji,
-			"ru":     a365.Titles.Ru,
+			"en":     strings.TrimSpace(a365.Titles.En),
+			"ja":     strings.TrimSpace(a365.Titles.Ja),
+			"romaji": strings.TrimSpace(a365.Titles.Romaji),
+			"ru":     strings.TrimSpace(a365.Titles.Ru),
 		},
 		Descriptions: a365.Descriptions,
 		Score:        a365.MyAnimeListScore,
@@ -335,7 +335,7 @@ func mapSimilar(similar []map[string]interface{}, limit int) []db.Similar {
 // Вспомогательные функции для безопасного получения значений
 func getString(m map[string]interface{}, key string) string {
 	if val, ok := m[key].(string); ok {
-		return val
+		return strings.TrimSpace(val)
 	}
 	return ""
 }
@@ -379,9 +379,9 @@ func mapEpisodesFromJikan(a365Episodes []anime365.Episode, jikanEpisodes []jikan
 		if jikanEp != nil {
 			resultEp.AirDate = jikanEp.Aired
 			resultEp.Titles = map[string]string{
-				"en":   jikanEp.Title,
-				"ja":   jikanEp.TitleJapanese,
-				"xjat": jikanEp.TitleRomanji,
+				"en":     strings.TrimSpace(jikanEp.Title),
+				"ja":     strings.TrimSpace(jikanEp.TitleJapanese),
+				"romaji": strings.TrimSpace(jikanEp.TitleRomanji),
 			}
 			resultEp.Rating = fmt.Sprintf("%.2f", jikanEp.Score)
 		}

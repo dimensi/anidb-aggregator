@@ -1,0 +1,466 @@
+{
+  "allTitles": [
+    "Sousou no Frieren",
+    "Провожающая в последний путь Фрирен",
+    "Frieren: Beyond Journey's End",
+    "Фрирен",
+    "葬送のフリーレン",
+    "Frieren - Beyond Journey's End -",
+    "Фрирен, провожающая в последний путь",
+    "Frieren at the Funeral"
+  ],
+  "aniDbId": 17617,
+  "animeNewsNetworkId": 26334,
+  "descriptions": [
+    {
+      "source": "world-art.ru",
+      "updatedDateTime": "2023-10-10 09:37:51",
+      "value": "Владыка Тьмы повержен, и вместе с тем подошло к концу путешествие героя Химмеля и его отряда. Шли годы, все они разбрелись кто куда, но только эльфийке-долгожительнице Фрирен десятилетия показались мгновением, и однажды на её плечи легла тяжесть осознания того, что людской век ужасно скоротечен. В конце концов эльфийка решает во чтобы то ни стало исполнить предсмертные желания своих друзей. Но сможет ли она это сделать? И как сильно её потрясёт череда неизбежных потерь? Фрирен пускается в путь, чтобы это выяснить."
+    },
+    {
+      "source": "shikimori.me",
+      "updatedDateTime": "2023-09-09 11:09:10",
+      "value": "Одержав победу над Королём демонов, отряд героя Химмеля вернулся домой. Приключение, растянувшееся на десятилетие, подошло к завершению. Волшебница-эльф Фрирен и её отважные товарищи принесли людям мир и разошлись в разные стороны, чтобы спокойно прожить остаток жизни. Однако не всех членов отряда ждёт одинаковая участь. Для эльфов время течёт иначе, поэтому Фрирен вынужденно становится свидетелем того, как её спутники один за другим постепенно уходят из жизни. Девушка осознала, что годы, проведённые в отряде героя, пронеслись в один миг, как падающая звезда в бескрайнем космосе её жизни, и столкнулась с сожалениями об упущенных возможностях. Сможет ли она смириться со смертью друзей и понять, что значит жизнь для окружающих её людей? Фрирен начинает новое путешествие, чтобы найти ответ."
+    }
+  ],
+  "episodes": [
+    {
+      "episodeFull": "Трейлер",
+      "episodeInt": "1",
+      "episodeTitle": "",
+      "episodeType": "preview",
+      "firstUploadedDateTime": "2023-07-25 18:02:24",
+      "id": 306115,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "1 серия",
+      "episodeInt": "1",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-09-29 18:05:57",
+      "id": 291395,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "2 серия",
+      "episodeInt": "2",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-09-29 18:21:22",
+      "id": 312552,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "3 серия",
+      "episodeInt": "3",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-09-29 18:23:05",
+      "id": 312553,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "4 серия",
+      "episodeInt": "4",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-09-29 18:29:12",
+      "id": 312554,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "5 серия",
+      "episodeInt": "5",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-10-06 18:11:13",
+      "id": 312555,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "6 серия",
+      "episodeInt": "6",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-10-13 18:04:06",
+      "id": 313150,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "7 серия",
+      "episodeInt": "7",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-10-20 18:06:53",
+      "id": 313628,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "8 серия",
+      "episodeInt": "8",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-10-27 18:07:57",
+      "id": 314104,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "9 серия",
+      "episodeInt": "9",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-11-03 18:03:40",
+      "id": 315111,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "10 серия",
+      "episodeInt": "10",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-11-10 18:10:43",
+      "id": 315721,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "11 серия",
+      "episodeInt": "11",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-11-17 18:22:27",
+      "id": 316489,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "12 серия",
+      "episodeInt": "12",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-11-24 18:19:41",
+      "id": 316869,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "13 серия",
+      "episodeInt": "13",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-12-01 18:24:03",
+      "id": 317319,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "14 серия",
+      "episodeInt": "14",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-12-08 18:18:29",
+      "id": 317799,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "15 серия",
+      "episodeInt": "15",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-12-15 18:26:02",
+      "id": 318190,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "16 серия",
+      "episodeInt": "16",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2023-12-22 18:30:27",
+      "id": 318588,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "17 серия",
+      "episodeInt": "17",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-01-05 18:45:01",
+      "id": 319054,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "18 серия",
+      "episodeInt": "18",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-01-12 18:25:46",
+      "id": 319809,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "19 серия",
+      "episodeInt": "19",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-01-19 17:42:01",
+      "id": 328212,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "20 серия",
+      "episodeInt": "20",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-01-26 20:05:33",
+      "id": 328881,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "21 серия",
+      "episodeInt": "21",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-02-02 18:54:16",
+      "id": 329568,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "22 серия",
+      "episodeInt": "22",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-02-09 18:26:21",
+      "id": 330213,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "23 серия",
+      "episodeInt": "23",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-02-16 18:17:10",
+      "id": 330676,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "24 серия",
+      "episodeInt": "24",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-02-23 18:38:29",
+      "id": 330998,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "25 серия",
+      "episodeInt": "25",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-03-01 18:18:23",
+      "id": 331434,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "26 серия",
+      "episodeInt": "26",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-03-08 18:21:33",
+      "id": 332105,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "27 серия",
+      "episodeInt": "27",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-03-15 18:09:46",
+      "id": 332615,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    },
+    {
+      "episodeFull": "28 серия",
+      "episodeInt": "28",
+      "episodeTitle": "",
+      "episodeType": "tv",
+      "firstUploadedDateTime": "2024-03-22 18:38:56",
+      "id": 333131,
+      "isActive": 1,
+      "isFirstUploaded": 1,
+      "seriesId": 30414
+    }
+  ],
+  "fansubsId": 7120,
+  "genres": [
+    {
+      "id": 2,
+      "title": "Приключения",
+      "url": "https://smotret-anime.online/anime/genres/2-priklyucheniya"
+    },
+    {
+      "id": 10,
+      "title": "Фэнтези",
+      "url": "https://smotret-anime.online/anime/genres/10-fentezi"
+    },
+    {
+      "id": 27,
+      "title": "Сёнен",
+      "url": "https://smotret-anime.online/anime/genres/27-senen"
+    },
+    {
+      "id": 8,
+      "title": "Драма",
+      "url": "https://smotret-anime.online/anime/genres/8-drama"
+    }
+  ],
+  "id": 30414,
+  "imdbId": 0,
+  "isActive": 1,
+  "isAiring": 0,
+  "isHentai": 0,
+  "links": [
+    {
+      "title": "World Art",
+      "url": "http://www.world-art.ru/animation/animation.php?id=11466"
+    },
+    {
+      "title": "Шикимори",
+      "url": "https://shikimori.one/animes/52991"
+    },
+    {
+      "title": "MyAnimeList",
+      "url": "https://myanimelist.net/anime/52991"
+    },
+    {
+      "title": "AniDb ",
+      "url": "https://anidb.net/perl-bin/animedb.pl?show=anime&aid=17617"
+    },
+    {
+      "title": "Anime News Network",
+      "url": "https://www.animenewsnetwork.com/encyclopedia/anime.php?id=26334"
+    },
+    {
+      "title": "Kage Project",
+      "url": "http://fansubs.ru/base.php?id=7120"
+    },
+    {
+      "title": "allcinema",
+      "url": "https://www.allcinema.net/cinema/386233"
+    },
+    {
+      "title": "natalie",
+      "url": "https://natalie.mu/comic/anime/608"
+    },
+    {
+      "title": "википедия (en)",
+      "url": "https://en.wikipedia.org/wiki/Frieren"
+    },
+    {
+      "title": "википедия (ja)",
+      "url": "https://ja.wikipedia.org/wiki/葬送のフリーレン"
+    },
+    {
+      "title": "syoboi",
+      "url": "https://cal.syoboi.jp/tid/6776/time"
+    },
+    {
+      "title": "crunchyroll",
+      "url": "https://www.crunchyroll.com/ru/series/GG5H5XQX4/frieren-beyond-journeys-end"
+    },
+    {
+      "title": "seesaa",
+      "url": "https://seesaawiki.jp/w/radioi_34/d/%c1%f2%c1%f7%a4%ce%a5%d5%a5%ea%a1%bc%a5%ec%a5%f3"
+    },
+    {
+      "title": "anilist",
+      "url": "https://anilist.co/anime/154587/Sousou-no-Frieren"
+    },
+    {
+      "title": "kinopoisk",
+      "url": "https://www.kinopoisk.ru/series/5401195"
+    },
+    {
+      "title": "википедия (ja)",
+      "url": "https://ja.wikipedia.org/wiki/%E8%91%AC%E9%80%81%E3%81%AE%E3%83%95%E3%83%AA%E3%83%BC%E3%83%AC%E3%83%B3"
+    },
+    {
+      "title": "википедия (ru)",
+      "url": "https://ru.wikipedia.org/wiki/Sousou_no_Frieren"
+    }
+  ],
+  "myAnimeListId": 52991,
+  "myAnimeListScore": "9.32",
+  "numberOfEpisodes": 28,
+  "posterUrl": "https://smotret-anime.online/posters/30414.41480234924.jpg",
+  "posterUrlSmall": "https://smotret-anime.online/posters/30414.41480234924.200x600.0.jpg",
+  "season": "Осень 2023",
+  "title": "Провожающая в последний путь Фрирен / Sousou no Frieren",
+  "titleLines": ["Провожающая в последний путь Фрирен", "Sousou no Frieren"],
+  "titles": {
+    "en": "Frieren: Beyond Journey's End",
+    "ja": "葬送のフリーレン",
+    "romaji": "Sousou no Frieren",
+    "ru": "Провожающая в последний путь Фрирен"
+  },
+  "type": "tv",
+  "typeTitle": "ТВ сериал",
+  "url": "https://smotret-anime.org/catalog/sousou-no-frieren-30414",
+  "worldArtId": 11466,
+  "worldArtScore": "-1",
+  "worldArtTopPlace": null,
+  "year": 2023
+}
