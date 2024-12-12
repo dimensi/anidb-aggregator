@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"encoding/xml"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -57,6 +58,12 @@ type XMLTitle struct {
 type XMLError struct {
 	Code    string `xml:"code,attr"`
 	Message string `xml:",chardata"`
+}
+
+type Config struct {
+	skipExisting bool
+	inputFile    string
+	outputFile   string
 }
 
 func fetchWithRetry(client *http.Client, url string) ([]byte, error) {
@@ -132,21 +139,67 @@ func parseAnimeEpisodes(data []byte) ([]Episode, error) {
 	return episodes, nil
 }
 
-func main() {
-	inputFile := "output.jsonl"
-	outputFile := "anidb-db.jsonl"
-	baseURL := "http://api.anidb.net:9001/httpapi?request=anime&client=ichimetvos&clientver=1&protover=1&aid="
-	rateLimiter := time.Tick(500 * time.Millisecond) // 2 запроса в секунду
+func readExistingEntries(filename string) (map[int]bool, error) {
+	existing := make(map[int]bool)
 
-	log.Printf("Opening input file: %s", inputFile)
-	input, err := os.Open(inputFile)
+	file, err := os.Open(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return existing, nil
+		}
+		return nil, fmt.Errorf("failed to open existing file: %v", err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		var anime AnimeOutput
+		if err := json.Unmarshal(scanner.Bytes(), &anime); err != nil {
+			log.Printf("Warning: Failed to parse existing entry: %v", err)
+			continue
+		}
+		existing[anime.ID] = true
+	}
+
+	return existing, scanner.Err()
+}
+
+func main() {
+	config := Config{
+		skipExisting: false,
+		inputFile:    "anime365-db.jsonl",
+		outputFile:   "anidb-db.jsonl",
+	}
+
+	flag.BoolVar(&config.skipExisting, "skip-existing", false, "Skip processing if entry already exists in output file")
+	flag.StringVar(&config.inputFile, "input", "anime365-db.jsonl", "Input file path")
+	flag.StringVar(&config.outputFile, "output", "anidb-db.jsonl", "Output file path")
+	flag.Parse()
+
+	var existing map[int]bool
+	var err error
+
+	if config.skipExisting {
+		log.Printf("Reading existing entries from %s", config.outputFile)
+		existing, err = readExistingEntries(config.outputFile)
+		if err != nil {
+			log.Fatalf("Failed to read existing entries: %v", err)
+		}
+		log.Printf("Found %d existing entries", len(existing))
+	}
+
+	baseURL := "http://api.anidb.net:9001/httpapi?request=anime&client=ichimetvos&clientver=2&protover=1&aid="
+	rateLimiter := time.Tick(5 * time.Second) // 1 запрос в 5 секунд
+
+	log.Printf("Opening input file: %s", config.inputFile)
+	input, err := os.Open(config.inputFile)
 	if err != nil {
 		log.Fatalf("Failed to open input file: %v", err)
 	}
 	defer input.Close()
 
-	log.Printf("Creating output file: %s", outputFile)
-	output, err := os.Create(outputFile)
+	log.Printf("Creating output file: %s", config.outputFile)
+	output, err := os.Create(config.outputFile)
 	if err != nil {
 		log.Fatalf("Failed to create output file: %v", err)
 	}
@@ -163,6 +216,14 @@ func main() {
 		if err := json.Unmarshal(scanner.Bytes(), &animeInput); err != nil {
 			log.Printf("Failed to parse input JSON: %v", err)
 			continue
+		}
+
+		if config.skipExisting {
+			if _, exists := existing[animeInput.AniDbID]; exists {
+				log.Printf("Skipping existing entry for AniDB ID: %d", animeInput.AniDbID)
+				delete(existing, animeInput.AniDbID) // Удаляем обработанную запись из памяти
+				continue
+			}
 		}
 
 		if animeInput.AniDbID == 0 {
@@ -228,5 +289,5 @@ func main() {
 		log.Fatalf("Error reading input file: %v", err)
 	}
 
-	log.Printf("All data successfully saved to %s", outputFile)
+	log.Printf("All data successfully saved to %s", config.outputFile)
 }

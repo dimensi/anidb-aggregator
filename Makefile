@@ -1,6 +1,6 @@
 # Определяем переменные
 BINARY_DIR = bin
-APPS = anime365-saver anidb-saver shikimori-saver
+APPS = anime365-saver anidb-saver shikimori-saver db-mapper
 GOOS ?= $(shell go env GOOS)
 GOARCH = amd64
 

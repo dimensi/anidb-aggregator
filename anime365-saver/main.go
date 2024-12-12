@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -14,20 +15,25 @@ type SeriesResponse struct {
 }
 
 func main() {
+	// Определяем флаги командной строки
+	initialOffset := flag.Int("offset", 0, "Starting offset for fetching data")
+	batchSize := flag.Int("limit", 500, "Number of items to fetch per request")
+	flag.Parse()
+
 	// Base URL to fetch the data from
-	baseURL := "https://smotret-anime.online/api/series/?limit=500&offset=%d"
+	baseURL := "https://smotret-anime.online/api/series/?limit=%d&offset=%d"
 
 	// Open the output file
-	file, err := os.Create("output.jsonl")
+	file, err := os.Create("anime365-db.jsonl")
 	if err != nil {
 		log.Fatalf("Failed to create output file: %v", err)
 	}
 	defer file.Close()
 
-	offset := 0
+	offset := *initialOffset
 	for {
-		// Construct the URL with the current offset
-		url := fmt.Sprintf(baseURL, offset)
+		// Construct the URL with the current offset and batch size
+		url := fmt.Sprintf(baseURL, *batchSize, offset)
 		fmt.Printf("Fetching data from: %s\n", url)
 
 		// Perform the HTTP GET request
@@ -69,8 +75,8 @@ func main() {
 		}
 
 		// Increment the offset for the next batch
-		offset += 500
+		offset += *batchSize
 	}
 
-	fmt.Println("All data successfully saved to output.jsonl")
+	fmt.Println("All data successfully saved to anime365-db.jsonl")
 }

@@ -59,7 +59,7 @@ func fetchWithRetry(client *http.Client, url string, maxRetries int) ([]byte, er
 		}
 
 		lastErr = err
-		retryDelay := time.Duration(attempt) * 2 * time.Second
+		retryDelay := time.Duration(attempt) * 10 * time.Second
 		log.Printf("Attempt %d/%d failed: %v. Retrying in %v...",
 			attempt, maxRetries, err, retryDelay)
 		time.Sleep(retryDelay)
@@ -68,8 +68,8 @@ func fetchWithRetry(client *http.Client, url string, maxRetries int) ([]byte, er
 }
 
 func main() {
-	inputFile := "output.jsonl"
-	outputFile := "shimori-db.jsonl"
+	inputFile := "anime365-db.jsonl"
+	outputFile := "shikimori-db.jsonl"
 	baseURL := "https://shikimori.one/api/animes/"
 
 	log.Printf("Opening input file: %s", inputFile)
@@ -109,7 +109,7 @@ func main() {
 		}
 
 		// Rate limiting logic
-		if requestCount >= 90 {
+		if requestCount >= 70 {
 			elapsed := time.Since(startMinute)
 			if elapsed < time.Minute {
 				log.Printf("Rate limit reached, sleeping for %v", time.Minute-elapsed)
