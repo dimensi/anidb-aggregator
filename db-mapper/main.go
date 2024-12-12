@@ -265,21 +265,28 @@ func main() {
 	jikanData := make(map[int]JikanData)
 
 	// Читаем anime365 данные
+	fmt.Println("Читаем anime365 данные")
 	scanner := bufio.NewScanner(anime365File)
 	buf := make([]byte, 10*1024*1024)
 	scanner.Buffer(buf, 10*1024*1024)
+	anime365Count := 0
 	for scanner.Scan() {
 		var data Anime365Data
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
-			log.Printf("Error parsing anime365 data: %v\nProblematic JSON: %s", err, scanner.Text())
+			// log.Printf("Error parsing anime365 data: %v\nProblematic JSON: %s", err, scanner.Text())
 			continue
 		}
 		anime365Data[int(data.MyAnimeListID)] = data
+		anime365Count++
+		fmt.Printf("\ranime365 Count: %d", anime365Count)
 	}
 
 	// Читаем shikimori данные
+	fmt.Println()
+	fmt.Println("Читаем shikimori данные")
 	scanner = bufio.NewScanner(shikimoriFile)
 	scanner.Buffer(buf, 10*1024*1024)
+	shikimoriCount := 0
 	for scanner.Scan() {
 		var data ShikimoriData
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
@@ -287,11 +294,16 @@ func main() {
 			continue
 		}
 		shikimoriData[data.MyAnimeListID] = data
+		shikimoriCount++
+		fmt.Printf("\rshikimori Count: %d", shikimoriCount)
 	}
 
 	// Читаем jikan данные
+	fmt.Println()
+	fmt.Println("Читаем jikan данные")
 	scanner = bufio.NewScanner(jikanFile)
 	scanner.Buffer(buf, 10*1024*1024)
+	jikanCount := 0
 	for scanner.Scan() {
 		var data JikanData
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
@@ -299,10 +311,16 @@ func main() {
 			continue
 		}
 		jikanData[data.MyAnimeListID] = data
-		log.Printf("Parsed Jikan data for MAL ID %d", data.MyAnimeListID)
+		jikanCount++
+		fmt.Printf("\rjikan Count: %d", jikanCount)
 	}
 
-	// Обрабатываем каждое аниме
+	// Добавим подсчет общего количества
+	totalAnime := len(anime365Data)
+	fmt.Println()
+	fmt.Printf("Начинаю обработку %d аниме...\n", totalAnime)
+
+	processed := 0
 	for malID, a365 := range anime365Data {
 		shiki, hasShiki := shikimoriData[malID]
 		jikan, hasJikan := jikanData[malID]
@@ -312,11 +330,24 @@ func main() {
 		// Записываем результат в файл
 		jsonData, err := json.Marshal(result)
 		if err != nil {
-			log.Printf("Error marshaling result data: %v", err)
+			log.Printf("Ошибка маршалинга для MAL ID %d: %v", malID, err)
 			continue
 		}
 		outputFile.WriteString(string(jsonData) + "\n")
+
+		// Обновляем прогресс
+		processed++
+		if processed%100 == 0 || processed == totalAnime {
+			progress := float64(processed) / float64(totalAnime) * 100
+			fmt.Printf("\rПрогресс: [%-50s] %.1f%% (%d/%d)",
+				strings.Repeat("=", int(progress/2))+">",
+				progress,
+				processed,
+				totalAnime,
+			)
+		}
 	}
+	fmt.Println("\nОбработка завершена!")
 }
 
 func mapToResultAnime(a365 Anime365Data, shiki ShikimoriData, hasShiki bool,
@@ -351,7 +382,7 @@ func mapToResultAnime(a365 Anime365Data, shiki ShikimoriData, hasShiki bool,
 	}
 
 	// Маппинг данных из Jikan
-	if hasJikan {
+	if hasJikan && len(jikan.Episodes) > 0 {
 		result.Episodes = mapEpisodesFromJikan(a365.Episodes, jikan.Episodes)
 	} else {
 		result.Episodes = mapEpisodesWithoutJikan(a365.Episodes)
@@ -557,7 +588,6 @@ func mapEpisodesFromJikan(a365Episodes []Anime365Episode, jikanEpisodes []JikanE
 				"xjat": jikanEp.TitleRomanji,
 			}
 			resultEp.Rating = fmt.Sprintf("%.2f", jikanEp.Score)
-			log.Printf("Titles: %s, %s, %s", jikanEp.Title, jikanEp.TitleJapanese, jikanEp.TitleRomanji)
 		}
 
 		result = append(result, resultEp)
