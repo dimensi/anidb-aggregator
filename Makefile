@@ -1,6 +1,6 @@
 # Определяем переменные
 BINARY_DIR = bin
-APPS = anime365-saver anidb-saver shikimori-saver db-mapper
+APPS = anime365-saver anidb-saver shikimori-saver db-mapper jikan-saver
 GOOS ?= $(shell go env GOOS)
 GOARCH = amd64
 
@@ -50,6 +50,14 @@ run-anidb:
 run-shikimori:
 	./$(BINARY_DIR)/shikimori-saver$(SUFFIX)
 
+.PHONY: run-jikan
+run-jikan:
+	./$(BINARY_DIR)/jikan-saver$(SUFFIX)
+
+.PHONY: run-db-mapper
+run-db-mapper:
+	./$(BINARY_DIR)/db-mapper$(SUFFIX)
+
 # Очистка бинарников
 .PHONY: clean
 clean:
@@ -64,7 +72,11 @@ help:
 	@echo "  make anime365-saver - собрать только anime365-saver"
 	@echo "  make anidb-saver   - собрать только anidb-saver"
 	@echo "  make shikimori-saver - собрать только shikimori-saver"
+	@echo "  make db-mapper       - собрать только db-mapper"
+	@echo "  make jikan-saver - собрать только jikan-saver"
 	@echo "  make run-anime365   - запустить anime365-saver"
 	@echo "  make run-anidb      - запустить anidb-saver"
 	@echo "  make run-shikimori  - запустить shikimori-saver"
-	@echo "  make clean        - удалить все бинарники"
+	@echo "  make run-jikan      - запустить jikan-saver"
+	@echo "  make run-db-mapper  - запустить db-mapper"
+	@echo "  make clean          - удалить все бинарники"
