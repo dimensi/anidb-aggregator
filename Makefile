@@ -1,6 +1,6 @@
 # Определяем переменные
 BINARY_DIR = bin
-APPS = anime365-saver anidb-saver shikimori-saver db-mapper jikan-saver
+APPS = anime365-saver shikimori-saver db-mapper jikan-saver
 GOOS ?= $(shell go env GOOS)
 GOARCH = amd64
 
@@ -42,10 +42,6 @@ build-all: $(BINARY_DIR)
 run-anime365:
 	./$(BINARY_DIR)/anime365-saver$(SUFFIX)
 
-.PHONY: run-anidb
-run-anidb:
-	./$(BINARY_DIR)/anidb-saver$(SUFFIX)
-
 .PHONY: run-shikimori
 run-shikimori:
 	./$(BINARY_DIR)/shikimori-saver$(SUFFIX)
@@ -70,12 +66,10 @@ help:
 	@echo "  make              - собрать все приложения для текущей ОС"
 	@echo "  make build-all    - собрать все приложения для всех ОС"
 	@echo "  make anime365-saver - собрать только anime365-saver"
-	@echo "  make anidb-saver   - собрать только anidb-saver"
 	@echo "  make shikimori-saver - собрать только shikimori-saver"
 	@echo "  make db-mapper       - собрать только db-mapper"
 	@echo "  make jikan-saver - собрать только jikan-saver"
 	@echo "  make run-anime365   - запустить anime365-saver"
-	@echo "  make run-anidb      - запустить anidb-saver"
 	@echo "  make run-shikimori  - запустить shikimori-saver"
 	@echo "  make run-jikan      - запустить jikan-saver"
 	@echo "  make run-db-mapper  - запустить db-mapper"

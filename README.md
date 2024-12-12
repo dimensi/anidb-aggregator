@@ -11,18 +11,16 @@
 
 #### Сборка отдельных приложений
 - `make anime365-saver` - собрать только anime365-saver
-- `make anidb-saver` - собрать только anidb-saver
 - `make shikimori-saver` - собрать только shikimori-saver
 
 #### Запуск приложений
 - `make run-anime365` - запустить anime365-saver
-- `make run-anidb` - запустить anidb-saver
 - `make run-shikimori` - запустить shikimori-saver
 
 #### Сборка для конкретной ОС
 Вы можете указать конкретную ОС при сборке, используя переменную GOOS:
 ```bash
-GOOS=darwin make anidb-saver
+GOOS=darwin make shikimori-saver
 GOOS=linux make shikimori-saver
 ```
 

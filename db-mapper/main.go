@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -16,10 +17,10 @@ const (
 )
 
 type Anime365Titles struct {
-	En     string `json:"en"`
-	Ja     string `json:"ja"`
-	Romaji string `json:"romaji"`
-	Ru     string `json:"ru"`
+	En     string `json:"en,omitempty"`
+	Ja     string `json:"ja,omitempty"`
+	Romaji string `json:"romaji,omitempty"`
+	Ru     string `json:"ru,omitempty"`
 }
 
 type Anime365ShowType string
@@ -79,26 +80,22 @@ type Anime365Episode struct {
 	SeriesID              int64            `json:"seriesId"`
 }
 
-type AniDBData struct {
+type JikanData struct {
 	ID            int            `json:"id"`
 	MyAnimeListID int            `json:"myAnimeListId"`
-	Episodes      []AniDBEpisode `json:"episodes"`
+	Episodes      []JikanEpisode `json:"episodes"`
 }
 
-type AniDBEpisode struct {
-	ID      string      `json:"id"`
-	Number  string      `json:"number"`
-	AirDate string      `json:"airDate"`
-	Titles  AniDBTitles `json:"titles"`
-	Summary string      `json:"summary"`
-	Rating  string      `json:"rating"`
-}
-
-type AniDBTitles struct {
-	En   string `json:"en"`
-	Fr   string `json:"fr"`
-	Ja   string `json:"ja"`
-	XJat string `json:"x-jat"`
+type JikanEpisode struct {
+	MalID         int     `json:"mal_id"`
+	Title         string  `json:"title"`
+	TitleJapanese string  `json:"title_japanese"`
+	TitleRomanji  string  `json:"title_romanji"`
+	Aired         string  `json:"aired"`
+	Score         float64 `json:"score"`
+	Filler        bool    `json:"filler"`
+	Recap         bool    `json:"recap"`
+	ForumURL      string  `json:"forum_url"`
 }
 
 type ShikimoriData struct {
@@ -219,7 +216,6 @@ type ResultEpisode struct {
 	SeriesID              int               `json:"seriesId"`
 	AirDate               string            `json:"airDate"`
 	Titles                map[string]string `json:"titles"`
-	Summary               string            `json:"summary"`
 	Rating                string            `json:"rating"`
 }
 
@@ -244,17 +240,17 @@ func main() {
 	}
 	defer anime365File.Close()
 
-	shikimoriFile, err := os.Open("shimori-db.jsonl")
+	shikimoriFile, err := os.Open("shikimori-db.jsonl")
 	if err != nil {
 		log.Fatalf("Failed to open shikimori file: %v", err)
 	}
 	defer shikimoriFile.Close()
 
-	anidbFile, err := os.Open("anidb-db.jsonl")
+	jikanFile, err := os.Open("jikan-db.jsonl")
 	if err != nil {
-		log.Fatalf("Failed to open anidb file: %v", err)
+		log.Fatalf("Failed to open jikan file: %v", err)
 	}
-	defer anidbFile.Close()
+	defer jikanFile.Close()
 
 	// Создаем выходной файл
 	outputFile, err := os.Create("db.jsonl")
@@ -266,7 +262,7 @@ func main() {
 	// Читаем данные из файлов в мапы
 	anime365Data := make(map[int]Anime365Data)
 	shikimoriData := make(map[int]ShikimoriData)
-	anidbData := make(map[int]AniDBData)
+	jikanData := make(map[int]JikanData)
 
 	// Читаем anime365 данные
 	scanner := bufio.NewScanner(anime365File)
@@ -275,7 +271,7 @@ func main() {
 	for scanner.Scan() {
 		var data Anime365Data
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
-			log.Printf("Error parsing anime365 data: %v", err)
+			log.Printf("Error parsing anime365 data: %v\nProblematic JSON: %s", err, scanner.Text())
 			continue
 		}
 		anime365Data[int(data.MyAnimeListID)] = data
@@ -293,24 +289,25 @@ func main() {
 		shikimoriData[data.MyAnimeListID] = data
 	}
 
-	// Читаем anidb данные
-	scanner = bufio.NewScanner(anidbFile)
+	// Читаем jikan данные
+	scanner = bufio.NewScanner(jikanFile)
 	scanner.Buffer(buf, 10*1024*1024)
 	for scanner.Scan() {
-		var data AniDBData
+		var data JikanData
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
-			log.Printf("Error parsing anidb data: %v", err)
+			log.Printf("Error parsing jikan data: %v", err)
 			continue
 		}
-		anidbData[data.MyAnimeListID] = data
+		jikanData[data.MyAnimeListID] = data
+		log.Printf("Parsed Jikan data for MAL ID %d", data.MyAnimeListID)
 	}
 
 	// Обрабатываем каждое аниме
 	for malID, a365 := range anime365Data {
 		shiki, hasShiki := shikimoriData[malID]
-		anidb, hasAnidb := anidbData[malID]
+		jikan, hasJikan := jikanData[malID]
 
-		result := mapToResultAnime(a365, shiki, hasShiki, anidb, hasAnidb)
+		result := mapToResultAnime(a365, shiki, hasShiki, jikan, hasJikan)
 
 		// Записываем результат в файл
 		jsonData, err := json.Marshal(result)
@@ -323,7 +320,7 @@ func main() {
 }
 
 func mapToResultAnime(a365 Anime365Data, shiki ShikimoriData, hasShiki bool,
-	anidb AniDBData, hasAnidb bool) ResultAnime {
+	jikan JikanData, hasJikan bool) ResultAnime {
 
 	result := ResultAnime{
 		ID:               int(a365.ID),
@@ -353,11 +350,11 @@ func mapToResultAnime(a365 Anime365Data, shiki ShikimoriData, hasShiki bool,
 		result.Trailers = shiki.ShikimoriData.Videos
 	}
 
-	// Маппинг данных из AniDB
-	if hasAnidb {
-		result.Episodes = mapEpisodes(a365.Episodes, anidb.Episodes)
+	// Маппинг данных из Jikan
+	if hasJikan {
+		result.Episodes = mapEpisodesFromJikan(a365.Episodes, jikan.Episodes)
 	} else {
-		result.Episodes = mapEpisodesWithoutAnidb(a365.Episodes)
+		result.Episodes = mapEpisodesWithoutJikan(a365.Episodes)
 	}
 
 	// Маппинг постера
@@ -529,15 +526,15 @@ func getInt(m map[string]interface{}, key string) int {
 	}
 }
 
-func mapEpisodes(a365Episodes []Anime365Episode, anidbEpisodes []AniDBEpisode) []ResultEpisode {
+func mapEpisodesFromJikan(a365Episodes []Anime365Episode, jikanEpisodes []JikanEpisode) []ResultEpisode {
 	result := make([]ResultEpisode, 0, len(a365Episodes))
 
 	for _, ep := range a365Episodes {
-		// Ищем соответствующий эпизод в AniDB данных
-		var anidbEp *AniDBEpisode
-		for _, aEp := range anidbEpisodes {
-			if aEp.Number == ep.EpisodeInt {
-				anidbEp = &aEp
+		// Ищем соответствующий эпизод в Jikan данных
+		var jikanEp *JikanEpisode
+		for _, jEp := range jikanEpisodes {
+			if fmt.Sprint(jEp.MalID) == ep.EpisodeInt {
+				jikanEp = &jEp
 				break
 			}
 		}
@@ -551,15 +548,16 @@ func mapEpisodes(a365Episodes []Anime365Episode, anidbEpisodes []AniDBEpisode) [
 			SeriesID:              int(ep.SeriesID),
 		}
 
-		// Добавляем данные из AniDB если они есть
-		if anidbEp != nil {
-			resultEp.AirDate = anidbEp.AirDate
+		// Добавляем данные из Jikan если они есть
+		if jikanEp != nil {
+			resultEp.AirDate = jikanEp.Aired
 			resultEp.Titles = map[string]string{
-				"en":   anidbEp.Titles.En,
-				"xjat": anidbEp.Titles.XJat,
+				"en":   jikanEp.Title,
+				"ja":   jikanEp.TitleJapanese,
+				"xjat": jikanEp.TitleRomanji,
 			}
-			resultEp.Summary = anidbEp.Summary
-			resultEp.Rating = anidbEp.Rating
+			resultEp.Rating = fmt.Sprintf("%.2f", jikanEp.Score)
+			log.Printf("Titles: %s, %s, %s", jikanEp.Title, jikanEp.TitleJapanese, jikanEp.TitleRomanji)
 		}
 
 		result = append(result, resultEp)
@@ -568,7 +566,7 @@ func mapEpisodes(a365Episodes []Anime365Episode, anidbEpisodes []AniDBEpisode) [
 	return result
 }
 
-func mapEpisodesWithoutAnidb(a365Episodes []Anime365Episode) []ResultEpisode {
+func mapEpisodesWithoutJikan(a365Episodes []Anime365Episode) []ResultEpisode {
 	result := make([]ResultEpisode, 0, len(a365Episodes))
 
 	for _, ep := range a365Episodes {
