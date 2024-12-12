@@ -7,7 +7,11 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
+
+	"dimensi/db-aggregator/pkg/anime365"
+	"dimensi/db-aggregator/pkg/db"
+	"dimensi/db-aggregator/pkg/jikan"
+	"dimensi/db-aggregator/pkg/shikimori"
 )
 
 const (
@@ -15,222 +19,6 @@ const (
 	RolesLimit       = 5
 	SimilarLimit     = 5
 )
-
-type Anime365Titles struct {
-	En     string `json:"en,omitempty"`
-	Ja     string `json:"ja,omitempty"`
-	Romaji string `json:"romaji,omitempty"`
-	Ru     string `json:"ru,omitempty"`
-}
-
-type Anime365ShowType string
-
-const (
-	Preview Anime365ShowType = "preview"
-	Tv      Anime365ShowType = "tv"
-)
-
-type Anime365Genre struct {
-	ID    int    `json:"id"`
-	Title string `json:"title"`
-	URL   string `json:"url"`
-}
-
-// Структуры для входных данных
-type Anime365Data struct {
-	AllTitles          []string              `json:"allTitles"`
-	AniDBID            int64                 `json:"aniDbId"`
-	AnimeNewsNetworkID int64                 `json:"animeNewsNetworkId"`
-	Descriptions       []Anime365Description `json:"descriptions"`
-	Episodes           []Anime365Episode     `json:"episodes"`
-	FansubsID          int64                 `json:"fansubsId"`
-	Genres             []Anime365Genre       `json:"genres"`
-	ID                 int64                 `json:"id"`
-	ImdbID             int64                 `json:"imdbId"`
-	IsActive           int64                 `json:"isActive"`
-	IsAiring           int64                 `json:"isAiring"`
-	IsHentai           int64                 `json:"isHentai"`
-	MyAnimeListID      int64                 `json:"myAnimeListId"`
-	MyAnimeListScore   string                `json:"myAnimeListScore"`
-	NumberOfEpisodes   int64                 `json:"numberOfEpisodes"`
-	PosterURL          string                `json:"posterUrl"`
-	PosterURLSmall     string                `json:"posterUrlSmall"`
-	Season             string                `json:"season"`
-	Title              string                `json:"title"`
-	TitleLines         []string              `json:"titleLines"`
-	Titles             Anime365Titles        `json:"titles"`
-	Type               Anime365ShowType      `json:"type"`
-	TypeTitle          string                `json:"typeTitle"`
-	URL                string                `json:"url"`
-	WorldArtID         int64                 `json:"worldArtId"`
-	WorldArtScore      string                `json:"worldArtScore"`
-	WorldArtTopPlace   interface{}           `json:"worldArtTopPlace"`
-	Year               int64                 `json:"year"`
-}
-
-type Anime365Episode struct {
-	EpisodeFull           string           `json:"episodeFull"`
-	EpisodeInt            string           `json:"episodeInt"`
-	EpisodeTitle          string           `json:"episodeTitle"`
-	EpisodeType           Anime365ShowType `json:"episodeType"`
-	FirstUploadedDateTime string           `json:"firstUploadedDateTime"`
-	ID                    int64            `json:"id"`
-	IsActive              int64            `json:"isActive"`
-	IsFirstUploaded       int64            `json:"isFirstUploaded"`
-	SeriesID              int64            `json:"seriesId"`
-}
-
-type JikanData struct {
-	ID            int            `json:"id"`
-	MyAnimeListID int            `json:"myAnimeListId"`
-	Episodes      []JikanEpisode `json:"episodes"`
-}
-
-type JikanEpisode struct {
-	MalID         int     `json:"mal_id"`
-	Title         string  `json:"title"`
-	TitleJapanese string  `json:"title_japanese"`
-	TitleRomanji  string  `json:"title_romanji"`
-	Aired         string  `json:"aired"`
-	Score         float64 `json:"score"`
-	Filler        bool    `json:"filler"`
-	Recap         bool    `json:"recap"`
-	ForumURL      string  `json:"forum_url"`
-}
-
-type ShikimoriData struct {
-	MyAnimeListID int                      `json:"myAnimeListId"`
-	ShikimoriData ShikimoriAnimeShow       `json:"shikimoriData"`
-	Roles         []map[string]interface{} `json:"roles"`
-	Screenshots   []map[string]interface{} `json:"screenshots"`
-	Similar       []map[string]interface{} `json:"similar"`
-}
-
-type ShikimoriAnimeShow struct {
-	AiredOn       string            `json:"aired_on"`
-	Anons         bool              `json:"anons"`
-	Duration      int64             `json:"duration"`
-	Episodes      int64             `json:"episodes"`
-	EpisodesAired int64             `json:"episodes_aired"`
-	Fandubbers    []string          `json:"fandubbers"`
-	Fansubbers    []string          `json:"fansubbers"`
-	Favoured      bool              `json:"favoured"`
-	Franchise     string            `json:"franchise"`
-	ID            int64             `json:"id"`
-	Image         ShikimoriImage    `json:"image"`
-	Kind          string            `json:"kind"`
-	Ongoing       bool              `json:"ongoing"`
-	ReleasedOn    string            `json:"released_on"`
-	Screenshots   []Screenshot      `json:"screenshots"`
-	Status        string            `json:"status"`
-	Studios       []ShikimoriStudio `json:"studios"`
-	UpdatedAt     time.Time         `json:"updated_at"`
-	Videos        []ShikimoriVideo  `json:"videos"`
-}
-
-type ShikimoriVideo struct {
-	Hosting   string `json:"hosting"`
-	ID        int64  `json:"id"`
-	ImageURL  string `json:"image_url"`
-	Kind      string `json:"kind"`
-	Name      string `json:"name"`
-	PlayerURL string `json:"player_url"`
-	URL       string `json:"url"`
-}
-
-type ShikimoriStudio struct {
-	FilteredName string `json:"filtered_name"`
-	ID           int    `json:"id"`
-	Image        string `json:"image"`
-	Name         string `json:"name"`
-	Real         bool   `json:"real"`
-}
-
-type ShikimoriImage struct {
-	Original string `json:"original,omitempty"`
-	Preview  string `json:"preview,omitempty"`
-	X48      string `json:"x48,omitempty"`
-	X96      string `json:"x96,omitempty"`
-}
-
-// Структура для выходных данных
-type ResultAnime struct {
-	ID               int                   `json:"id"`
-	MyAnimeListID    int                   `json:"myAnimeListId"`
-	Score            string                `json:"score"`
-	Titles           map[string]string     `json:"titles"`
-	Type             string                `json:"type"`
-	Year             int                   `json:"year"`
-	Season           string                `json:"season"`
-	NumberOfEpisodes int                   `json:"numberOfEpisodes"`
-	Duration         int                   `json:"duration"`
-	AiredOn          string                `json:"airedOn"`
-	ReleasedOn       string                `json:"releasedOn"`
-	Descriptions     []Anime365Description `json:"descriptions"`
-	Studios          []ShikimoriStudio     `json:"studios"`
-	Poster           Poster                `json:"poster"`
-	Trailers         []ShikimoriVideo      `json:"trailers"`
-	Genres           []Anime365Genre       `json:"genres"`
-	Roles            []Role                `json:"roles"`
-	Screenshots      []Screenshot          `json:"screenshots"`
-	Episodes         []ResultEpisode       `json:"episodes"`
-	Similar          []Similar             `json:"similar"`
-}
-
-type Anime365Description struct {
-	Source          string `json:"source"`
-	UpdatedDateTime string `json:"updatedDateTime"`
-	Value           string `json:"value"`
-}
-
-type Poster struct {
-	Anime365  ShikimoriImage `json:"anime365"`
-	Shikimori ShikimoriImage `json:"shikimori"`
-}
-
-type Role struct {
-	Character    Character   `json:"character"`
-	Person       interface{} `json:"person"`
-	Roles        []string    `json:"roles"`
-	RolesRussian []string    `json:"roles_russian"`
-}
-
-type Character struct {
-	ID      int            `json:"id"`
-	Image   ShikimoriImage `json:"image"`
-	Name    string         `json:"name"`
-	Russian string         `json:"russian"`
-}
-
-type Screenshot struct {
-	Original string `json:"original"`
-	Preview  string `json:"preview"`
-}
-
-type ResultEpisode struct {
-	Number                string            `json:"number"`
-	Type                  string            `json:"type"`
-	FirstUploadedDateTime string            `json:"firstUploadedDateTime"`
-	ID                    int               `json:"id"`
-	IsActive              int               `json:"isActive"`
-	SeriesID              int               `json:"seriesId"`
-	AirDate               string            `json:"airDate"`
-	Titles                map[string]string `json:"titles"`
-	Rating                string            `json:"rating"`
-}
-
-type Similar struct {
-	AiredOn       string            `json:"aired_on"`
-	Episodes      int               `json:"episodes"`
-	EpisodesAired int               `json:"episodes_aired"`
-	ID            int               `json:"id"`
-	Image         ShikimoriImage    `json:"image"`
-	Kind          string            `json:"kind"`
-	Titles        map[string]string `json:"titles"`
-	ReleasedOn    string            `json:"released_on"`
-	Score         string            `json:"score"`
-	Status        string            `json:"status"`
-}
 
 func main() {
 	// Открываем входные файлы
@@ -260,9 +48,9 @@ func main() {
 	defer outputFile.Close()
 
 	// Читаем данные из файлов в мапы
-	anime365Data := make(map[int]Anime365Data)
-	shikimoriData := make(map[int]ShikimoriData)
-	jikanData := make(map[int]JikanData)
+	anime365Data := make(map[int]anime365.Data)
+	shikimoriData := make(map[int]shikimori.Data)
+	jikanData := make(map[int]jikan.Data)
 
 	// Читаем anime365 данные
 	fmt.Println("Читаем anime365 данные")
@@ -271,9 +59,8 @@ func main() {
 	scanner.Buffer(buf, 10*1024*1024)
 	anime365Count := 0
 	for scanner.Scan() {
-		var data Anime365Data
+		var data anime365.Data
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
-			// log.Printf("Error parsing anime365 data: %v\nProblematic JSON: %s", err, scanner.Text())
 			continue
 		}
 		anime365Data[int(data.MyAnimeListID)] = data
@@ -288,7 +75,7 @@ func main() {
 	scanner.Buffer(buf, 10*1024*1024)
 	shikimoriCount := 0
 	for scanner.Scan() {
-		var data ShikimoriData
+		var data shikimori.Data
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
 			log.Printf("Error parsing shikimori data: %v", err)
 			continue
@@ -305,7 +92,7 @@ func main() {
 	scanner.Buffer(buf, 10*1024*1024)
 	jikanCount := 0
 	for scanner.Scan() {
-		var data JikanData
+		var data jikan.Data
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
 			log.Printf("Error parsing jikan data: %v", err)
 			continue
@@ -325,10 +112,10 @@ func main() {
 		shiki, hasShiki := shikimoriData[malID]
 		jikan, hasJikan := jikanData[malID]
 
-		result := mapToResultAnime(a365, shiki, hasShiki, jikan, hasJikan)
+		resultAnime := mapToResultAnime(a365, shiki, hasShiki, jikan, hasJikan)
 
 		// Записываем результат в файл
-		jsonData, err := json.Marshal(result)
+		jsonData, err := json.Marshal(resultAnime)
 		if err != nil {
 			log.Printf("Ошибка маршалинга для MAL ID %d: %v", malID, err)
 			continue
@@ -348,12 +135,21 @@ func main() {
 		}
 	}
 	fmt.Println("\nОбработка завершена!")
+
+	// Получаем информацию о размере файла
+	fileInfo, err := outputFile.Stat()
+	if err != nil {
+		log.Printf("Ошибка при пол��чении размера файла: %v", err)
+	} else {
+		size := float64(fileInfo.Size()) / (1024 * 1024) // Конвертируем в МБ
+		fmt.Printf("Размер выходного файла: %.2f МБ\n", size)
+	}
 }
 
-func mapToResultAnime(a365 Anime365Data, shiki ShikimoriData, hasShiki bool,
-	jikan JikanData, hasJikan bool) ResultAnime {
+func mapToResultAnime(a365 anime365.Data, shiki shikimori.Data, hasShiki bool,
+	jikan jikan.Data, hasJikan bool) db.Anime {
 
-	result := ResultAnime{
+	resultAnime := db.Anime{
 		ID:               int(a365.ID),
 		MyAnimeListID:    int(a365.MyAnimeListID),
 		Type:             string(a365.Type),
@@ -372,29 +168,29 @@ func mapToResultAnime(a365 Anime365Data, shiki ShikimoriData, hasShiki bool,
 
 	// Маппинг данных из Shikimori
 	if hasShiki {
-		result.AiredOn = shiki.ShikimoriData.AiredOn
-		result.ReleasedOn = shiki.ShikimoriData.ReleasedOn
-		result.Duration = int(shiki.ShikimoriData.Duration)
-		result.Roles = mapRoles(shiki.Roles)
-		result.Screenshots = mapScreenshots(shiki.Screenshots, ScreenshotsLimit)
-		result.Similar = mapSimilar(shiki.Similar, SimilarLimit)
-		result.Trailers = shiki.ShikimoriData.Videos
+		resultAnime.AiredOn = shiki.ShikimoriData.AiredOn
+		resultAnime.ReleasedOn = shiki.ShikimoriData.ReleasedOn
+		resultAnime.Duration = int(shiki.ShikimoriData.Duration)
+		resultAnime.Roles = mapRoles(shiki.Roles)
+		resultAnime.Screenshots = mapScreenshots(shiki.Screenshots, ScreenshotsLimit)
+		resultAnime.Similar = mapSimilar(shiki.Similar, SimilarLimit)
+		resultAnime.Trailers = shiki.ShikimoriData.Videos
 	}
 
 	// Маппинг данных из Jikan
 	if hasJikan && len(jikan.Episodes) > 0 {
-		result.Episodes = mapEpisodesFromJikan(a365.Episodes, jikan.Episodes)
+		resultAnime.Episodes = mapEpisodesFromJikan(a365.Episodes, jikan.Episodes)
 	} else {
-		result.Episodes = mapEpisodesWithoutJikan(a365.Episodes)
+		resultAnime.Episodes = mapEpisodesWithoutJikan(a365.Episodes)
 	}
 
 	// Маппинг постера
-	result.Poster = Poster{
-		Anime365: ShikimoriImage{
+	resultAnime.Poster = db.Poster{
+		Anime365: shikimori.Image{
 			Original: a365.PosterURL,
 			Preview:  a365.PosterURLSmall,
 		},
-		Shikimori: ShikimoriImage{
+		Shikimori: shikimori.Image{
 			Original: "https://shikimori.one" + shiki.ShikimoriData.Image.Original,
 			Preview:  "https://shikimori.one" + shiki.ShikimoriData.Image.Preview,
 			X48:      "https://shikimori.one" + shiki.ShikimoriData.Image.X48,
@@ -403,14 +199,14 @@ func mapToResultAnime(a365 Anime365Data, shiki ShikimoriData, hasShiki bool,
 	}
 
 	// Маппинг жанров и студий
-	result.Genres = a365.Genres
-	result.Studios = shiki.ShikimoriData.Studios
+	resultAnime.Genres = a365.Genres
+	resultAnime.Studios = shiki.ShikimoriData.Studios
 
-	return result
+	return resultAnime
 }
 
-func mapRoles(roles []map[string]interface{}) []Role {
-	result := make([]Role, 0, len(roles))
+func mapRoles(roles []map[string]interface{}) []db.Role {
+	result := make([]db.Role, 0, len(roles))
 
 	for _, r := range roles {
 		// Проверяем, есть ли роль "Main" среди ролей персонажа
@@ -429,18 +225,18 @@ func mapRoles(roles []map[string]interface{}) []Role {
 			continue
 		}
 
-		role := Role{}
+		role := db.Role{}
 
 		// Маппинг персонажа
 		if char, ok := r["character"].(map[string]interface{}); ok {
-			role.Character = Character{
+			role.Character = db.Character{
 				ID:      int(char["id"].(float64)),
 				Name:    char["name"].(string),
 				Russian: char["russian"].(string),
 			}
 
 			if img, ok := char["image"].(map[string]interface{}); ok {
-				role.Character.Image = ShikimoriImage{
+				role.Character.Image = shikimori.Image{
 					Original: "https://shikimori.one" + getString(img, "original"),
 					Preview:  "https://shikimori.one" + getString(img, "preview"),
 					X48:      "https://shikimori.one" + getString(img, "x48"),
@@ -474,11 +270,11 @@ func mapRoles(roles []map[string]interface{}) []Role {
 	return result
 }
 
-func mapScreenshots(screenshots []map[string]interface{}, limit int) []Screenshot {
-	result := make([]Screenshot, 0, len(screenshots))
+func mapScreenshots(screenshots []map[string]interface{}, limit int) []db.Screenshot {
+	result := make([]db.Screenshot, 0, len(screenshots))
 
 	for _, s := range screenshots {
-		screenshot := Screenshot{}
+		screenshot := db.Screenshot{}
 
 		if original, ok := s["original"].(string); ok {
 			screenshot.Original = original
@@ -497,11 +293,11 @@ func mapScreenshots(screenshots []map[string]interface{}, limit int) []Screensho
 	return result
 }
 
-func mapSimilar(similar []map[string]interface{}, limit int) []Similar {
-	result := make([]Similar, 0, limit)
+func mapSimilar(similar []map[string]interface{}, limit int) []db.Similar {
+	result := make([]db.Similar, 0, limit)
 
 	for _, s := range similar {
-		sim := Similar{
+		sim := db.Similar{
 			AiredOn:       getString(s, "aired_on"),
 			Episodes:      getInt(s, "episodes"),
 			EpisodesAired: getInt(s, "episodes_aired"),
@@ -518,7 +314,7 @@ func mapSimilar(similar []map[string]interface{}, limit int) []Similar {
 
 		// Маппинг изображения
 		if img, ok := s["image"].(map[string]interface{}); ok {
-			sim.Image = ShikimoriImage{
+			sim.Image = shikimori.Image{
 				Original: "https://shikimori.one" + getString(img, "original"),
 				Preview:  "https://shikimori.one" + getString(img, "preview"),
 				X48:      "https://shikimori.one" + getString(img, "x48"),
@@ -557,12 +353,12 @@ func getInt(m map[string]interface{}, key string) int {
 	}
 }
 
-func mapEpisodesFromJikan(a365Episodes []Anime365Episode, jikanEpisodes []JikanEpisode) []ResultEpisode {
-	result := make([]ResultEpisode, 0, len(a365Episodes))
+func mapEpisodesFromJikan(a365Episodes []anime365.Episode, jikanEpisodes []jikan.Episode) []db.Episode {
+	result := make([]db.Episode, 0, len(a365Episodes))
 
 	for _, ep := range a365Episodes {
 		// Ищем соответствующий эпизод в Jikan данных
-		var jikanEp *JikanEpisode
+		var jikanEp *jikan.Episode
 		for _, jEp := range jikanEpisodes {
 			if fmt.Sprint(jEp.MalID) == ep.EpisodeInt {
 				jikanEp = &jEp
@@ -570,7 +366,7 @@ func mapEpisodesFromJikan(a365Episodes []Anime365Episode, jikanEpisodes []JikanE
 			}
 		}
 
-		resultEp := ResultEpisode{
+		resultEp := db.Episode{
 			Number:                ep.EpisodeInt,
 			Type:                  string(ep.EpisodeType),
 			FirstUploadedDateTime: ep.FirstUploadedDateTime,
@@ -596,11 +392,11 @@ func mapEpisodesFromJikan(a365Episodes []Anime365Episode, jikanEpisodes []JikanE
 	return result
 }
 
-func mapEpisodesWithoutJikan(a365Episodes []Anime365Episode) []ResultEpisode {
-	result := make([]ResultEpisode, 0, len(a365Episodes))
+func mapEpisodesWithoutJikan(a365Episodes []anime365.Episode) []db.Episode {
+	result := make([]db.Episode, 0, len(a365Episodes))
 
 	for _, ep := range a365Episodes {
-		resultEp := ResultEpisode{
+		resultEp := db.Episode{
 			Number:                ep.EpisodeInt,
 			Type:                  string(ep.EpisodeType),
 			FirstUploadedDateTime: ep.FirstUploadedDateTime,

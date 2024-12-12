@@ -1,3 +1,3 @@
-module dimensi/anidb-aggregator
+module dimensi/db-aggregator
 
 go 1.23.4

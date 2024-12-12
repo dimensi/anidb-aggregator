@@ -2,14 +2,14 @@ package main
 
 import (
 	"bufio"
+	"dimensi/db-aggregator/pkg/fetcher"
+	"dimensi/db-aggregator/pkg/ratelimiter"
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 type Episode struct {
@@ -50,89 +50,15 @@ type Config struct {
 	outputFile   string
 }
 
-type RateLimiter struct {
-	requests chan time.Time
-	ticker   *time.Ticker
-}
-
-func NewRateLimiter(requestsPerSecond, requestsPerMinute int) *RateLimiter {
-	rl := &RateLimiter{
-		requests: make(chan time.Time, requestsPerMinute),
-		ticker:   time.NewTicker(time.Second / time.Duration(requestsPerSecond)),
-	}
-
-	// Очистка минутного буфера
-	go func() {
-		minuteTicker := time.NewTicker(time.Minute)
-		for range minuteTicker.C {
-			// Очищаем канал
-			for len(rl.requests) > 0 {
-				<-rl.requests
-			}
-		}
-	}()
-
-	return rl
-}
-
-func (rl *RateLimiter) Wait() {
-	<-rl.ticker.C
-	rl.requests <- time.Now()
-
-	// Если достигли лимита в минуту
-	if len(rl.requests) >= 60 {
-		// Ждем, пока не освободится место
-		<-rl.requests
-	}
-}
-
-func fetchWithRetry(client *http.Client, url string, rateLimiter *RateLimiter) ([]byte, error) {
-	maxRetries := 3
-
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		log.Printf("Fetching URL: %s (attempt %d/%d)", url, attempt, maxRetries)
-
-		rateLimiter.Wait()
-
-		resp, err := client.Get(url)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch URL %s: %v", url, err)
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			return nil, fmt.Errorf("failed to read response body: %v", err)
-		}
-
-		if resp.StatusCode == 429 {
-			if attempt < maxRetries {
-				log.Printf("Rate limit exceeded, waiting before retry...")
-				time.Sleep(time.Second * 5)
-				continue
-			}
-			return nil, fmt.Errorf("rate limit exceeded after %d attempts", maxRetries)
-		}
-
-		if resp.StatusCode != 200 {
-			return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-		}
-
-		log.Printf("Successfully fetched URL: %s", url)
-		return body, nil
-	}
-
-	return nil, fmt.Errorf("max retries reached")
-}
-
-func fetchAllEpisodes(client *http.Client, malID int, rateLimiter *RateLimiter) ([]Episode, error) {
+func fetchAllEpisodes(client *http.Client, malID int, rateLimiter *ratelimiter.RateLimiter) ([]Episode, error) {
 	var allEpisodes []Episode
 	page := 1
 	baseURL := "https://api.jikan.moe/v4/anime/%d/episodes"
+	config := fetcher.DefaultConfig()
 
 	for {
 		url := fmt.Sprintf(baseURL+"?page=%d", malID, page)
-		body, err := fetchWithRetry(client, url, rateLimiter)
+		body, err := fetcher.FetchWithRetry(client, url, rateLimiter, config)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +116,7 @@ func main() {
 	flag.StringVar(&config.outputFile, "output", "jikan-db.jsonl", "Output file path")
 	flag.Parse()
 
-	rateLimiter := NewRateLimiter(3, 60) // 3 запроса в секунду, 60 запросов в минуту
+	rateLimiter := ratelimiter.New(3, 60)
 
 	var existing map[int]bool
 	var err error

@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
+	"dimensi/db-aggregator/pkg/fetcher"
+	"dimensi/db-aggregator/pkg/ratelimiter"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 type AnimeData struct {
@@ -27,44 +27,6 @@ func createEmptyAnimeData(id int) AnimeData {
 		Screenshots:   make([]map[string]interface{}, 0),
 		Similar:       make([]map[string]interface{}, 0),
 	}
-}
-
-func fetchWithRateLimit(client *http.Client, url string) ([]byte, error) {
-	log.Printf("Fetching URL: %s", url)
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch URL %s: %v", url, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code %d for URL %s", resp.StatusCode, url)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %v", err)
-	}
-
-	log.Printf("Successfully fetched URL: %s", url)
-	return body, nil
-}
-
-func fetchWithRetry(client *http.Client, url string, maxRetries int) ([]byte, error) {
-	var lastErr error
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		body, err := fetchWithRateLimit(client, url)
-		if err == nil {
-			return body, nil
-		}
-
-		lastErr = err
-		retryDelay := time.Duration(attempt) * 10 * time.Second
-		log.Printf("Attempt %d/%d failed: %v. Retrying in %v...",
-			attempt, maxRetries, err, retryDelay)
-		time.Sleep(retryDelay)
-	}
-	return nil, fmt.Errorf("failed after %d attempts. Last error: %v", maxRetries, lastErr)
 }
 
 func main() {
@@ -91,8 +53,10 @@ func main() {
 	const maxCapacity = 10 * 1024 * 1024
 	buf := make([]byte, maxCapacity)
 	scanner.Buffer(buf, maxCapacity)
-	requestCount := 0
-	startMinute := time.Now()
+
+	// Создаем rate limiter для Shikimori API (3 запроса/сек, 70 запросов/мин)
+	rateLimiter := ratelimiter.New(3, 70)
+	config := fetcher.DefaultConfig()
 
 	for scanner.Scan() {
 		var anime AnimeData
@@ -108,33 +72,15 @@ func main() {
 			continue
 		}
 
-		// Rate limiting logic
-		if requestCount >= 70 {
-			elapsed := time.Since(startMinute)
-			if elapsed < time.Minute {
-				log.Printf("Rate limit reached, sleeping for %v", time.Minute-elapsed)
-				time.Sleep(time.Minute - elapsed)
-			}
-			requestCount = 0
-			startMinute = time.Now()
-		}
-
 		// Fetch main anime data
 		url := fmt.Sprintf("%s%d", baseURL, id)
 		log.Printf("Fetching main anime data for ID: %d", id)
-		body, err := fetchWithRetry(client, url, 3)
+		body, err := fetcher.FetchWithRetry(client, url, rateLimiter, config)
 		if err != nil {
-			log.Printf("Failed to fetch anime data after all retries: %v", err)
+			log.Printf("Failed to fetch anime data: %v", err)
 			anime = createEmptyAnimeData(id)
-			jsonLine, err := json.Marshal(anime)
-			if err != nil {
-				log.Printf("Failed to marshal empty anime data: %v", err)
-				continue
-			}
-			if _, err := output.WriteString(string(jsonLine) + "\n"); err != nil {
-				log.Printf("Failed to write empty anime data to output file: %v", err)
-			}
-			log.Printf("Wrote empty anime data for ID: %d to output file", id)
+			jsonLine, _ := json.Marshal(anime)
+			output.WriteString(string(jsonLine) + "\n")
 			continue
 		}
 
@@ -143,21 +89,15 @@ func main() {
 			continue
 		}
 		log.Printf("Successfully fetched and parsed main anime data for ID: %d", id)
-		requestCount++
 
 		// Fetch related data
 		endpoints := []string{"roles", "screenshots", "similar"}
 		for _, endpoint := range endpoints {
 			url := fmt.Sprintf("%s%d/%s", baseURL, id, endpoint)
 			log.Printf("Fetching %s data for ID: %d", endpoint, id)
-			body, err := fetchWithRetry(client, url, 3)
+			body, err := fetcher.FetchWithRetry(client, url, rateLimiter, config)
 			if err != nil {
 				log.Printf("Failed to fetch %s for anime %d: %v", endpoint, id, err)
-				continue
-			}
-
-			if len(body) == 0 {
-				log.Printf("Empty response for %s data, skipping", endpoint)
 				continue
 			}
 
@@ -173,15 +113,9 @@ func main() {
 
 			if err := json.Unmarshal(body, target); err != nil {
 				log.Printf("Failed to parse %s data: %v", endpoint, err)
-				log.Printf("Response body for %s: %s", endpoint, string(body))
-			} else {
-				log.Printf("Successfully fetched and parsed %s data for ID: %d", endpoint, id)
+				continue
 			}
-			requestCount++
-			if requestCount%5 == 0 {
-				log.Printf("Sleeping for 1 second to avoid hitting rate limits")
-				time.Sleep(1 * time.Second)
-			}
+			log.Printf("Successfully fetched and parsed %s data for ID: %d", endpoint, id)
 		}
 
 		// Write updated anime data to the new file
