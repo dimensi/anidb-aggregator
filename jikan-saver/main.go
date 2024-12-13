@@ -92,6 +92,9 @@ func readExistingEntries(filename string) (map[int]bool, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+	const maxCapacity = 10 * 1024 * 1024 // 10MB
+	buf := make([]byte, maxCapacity)
+	scanner.Buffer(buf, maxCapacity)
 	for scanner.Scan() {
 		var anime AnimeOutput
 		if err := json.Unmarshal(scanner.Bytes(), &anime); err != nil {
@@ -136,9 +139,9 @@ func main() {
 	}
 	defer input.Close()
 
-	output, err := os.Create(config.outputFile)
+	output, err := os.OpenFile(config.outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Fatalf("Failed to create output file: %v", err)
+		log.Fatalf("Failed to open output file: %v", err)
 	}
 	defer output.Close()
 
@@ -157,7 +160,6 @@ func main() {
 
 		if config.skipExisting {
 			if _, exists := existing[animeInput.ID]; exists {
-				log.Printf("Skipping existing entry for MAL ID: %d", animeInput.ID)
 				continue
 			}
 		}
