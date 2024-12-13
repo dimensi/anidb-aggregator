@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"dimensi/db-aggregator/pkg/anime365"
 	"dimensi/db-aggregator/pkg/db"
@@ -46,6 +47,19 @@ func main() {
 		log.Fatalf("Failed to create output file: %v", err)
 	}
 	defer outputFile.Close()
+
+	// Записываем метаданные в первую строку
+	metadata := struct {
+		Timestamp int64 `json:"timestamp"`
+	}{
+		Timestamp: time.Now().Unix(),
+	}
+
+	metadataJSON, err := json.Marshal(metadata)
+	if err != nil {
+		log.Fatalf("Failed to marshal metadata: %v", err)
+	}
+	outputFile.WriteString(string(metadataJSON) + "\n")
 
 	// Читаем данные из файлов в мапы
 	anime365Data := make(map[int]anime365.Data)
@@ -139,7 +153,7 @@ func main() {
 	// Получаем информацию о размере файла
 	fileInfo, err := outputFile.Stat()
 	if err != nil {
-		log.Printf("Ошибка при пол��чении размера файла: %v", err)
+		log.Printf("Ошибка при получении размера файла: %v", err)
 	} else {
 		size := float64(fileInfo.Size()) / (1024 * 1024) // Конвертируем в МБ
 		fmt.Printf("Размер выходного файла: %.2f МБ\n", size)
@@ -162,8 +176,14 @@ func mapToResultAnime(a365 anime365.Data, shiki shikimori.Data, hasShiki bool,
 			"romaji": strings.TrimSpace(a365.Titles.Romaji),
 			"ru":     strings.TrimSpace(a365.Titles.Ru),
 		},
-		Descriptions: a365.Descriptions,
+		Descriptions: mapDescriptions(a365.Descriptions),
 		Score:        a365.MyAnimeListScore,
+		Trailers:     []db.Video{},
+		Studios:      []db.Studio{},
+		Genres:       mapGenres(a365.Genres),
+		Roles:        []db.Role{},
+		Screenshots:  []db.Screenshot{},
+		Similar:      []db.Similar{},
 	}
 
 	// Маппинг данных из Shikimori
@@ -174,7 +194,8 @@ func mapToResultAnime(a365 anime365.Data, shiki shikimori.Data, hasShiki bool,
 		resultAnime.Roles = mapRoles(shiki.Roles)
 		resultAnime.Screenshots = mapScreenshots(shiki.Screenshots, ScreenshotsLimit)
 		resultAnime.Similar = mapSimilar(shiki.Similar, SimilarLimit)
-		resultAnime.Trailers = shiki.ShikimoriData.Videos
+		resultAnime.Studios = mapStudios(shiki.ShikimoriData.Studios)
+		resultAnime.Trailers = mapTrailers(shiki.ShikimoriData.Videos)
 	}
 
 	// Маппинг данных из Jikan
@@ -186,11 +207,11 @@ func mapToResultAnime(a365 anime365.Data, shiki shikimori.Data, hasShiki bool,
 
 	// Маппинг постера
 	resultAnime.Poster = db.Poster{
-		Anime365: shikimori.Image{
+		Anime365: db.Image{
 			Original: a365.PosterURL,
 			Preview:  a365.PosterURLSmall,
 		},
-		Shikimori: shikimori.Image{
+		Shikimori: db.Image{
 			Original: "https://shikimori.one" + shiki.ShikimoriData.Image.Original,
 			Preview:  "https://shikimori.one" + shiki.ShikimoriData.Image.Preview,
 			X48:      "https://shikimori.one" + shiki.ShikimoriData.Image.X48,
@@ -199,10 +220,38 @@ func mapToResultAnime(a365 anime365.Data, shiki shikimori.Data, hasShiki bool,
 	}
 
 	// Маппинг жанров и студий
-	resultAnime.Genres = a365.Genres
-	resultAnime.Studios = shiki.ShikimoriData.Studios
 
 	return resultAnime
+}
+
+func mapGenres(genres []anime365.Genre) []db.Genre {
+	result := make([]db.Genre, 0, len(genres))
+
+	for _, g := range genres {
+		result = append(result, db.Genre{
+			ID:    g.ID,
+			Title: g.Title,
+			URL:   g.URL,
+		})
+	}
+
+	return result
+}
+
+func mapStudios(studios []shikimori.Studio) []db.Studio {
+	result := make([]db.Studio, 0, len(studios))
+
+	for _, s := range studios {
+		result = append(result, db.Studio{
+			ID:           s.ID,
+			FilteredName: s.FilteredName,
+			Image:        s.Image,
+			Name:         s.Name,
+			Real:         s.Real,
+		})
+	}
+
+	return result
 }
 
 func mapRoles(roles []map[string]interface{}) []db.Role {
@@ -236,7 +285,7 @@ func mapRoles(roles []map[string]interface{}) []db.Role {
 			}
 
 			if img, ok := char["image"].(map[string]interface{}); ok {
-				role.Character.Image = shikimori.Image{
+				role.Character.Image = db.Image{
 					Original: "https://shikimori.one" + getString(img, "original"),
 					Preview:  "https://shikimori.one" + getString(img, "preview"),
 					X48:      "https://shikimori.one" + getString(img, "x48"),
@@ -262,6 +311,38 @@ func mapRoles(roles []map[string]interface{}) []db.Role {
 		}
 
 		result = append(result, role)
+	}
+
+	return result
+}
+
+func mapDescriptions(descriptions []anime365.Description) []db.Description {
+	result := make([]db.Description, 0, len(descriptions))
+
+	for _, d := range descriptions {
+		result = append(result, db.Description{
+			Source:          d.Source,
+			UpdatedDateTime: d.UpdatedDateTime,
+			Value:           d.Value,
+		})
+	}
+
+	return result
+}
+
+func mapTrailers(trailers []shikimori.Video) []db.Video {
+	result := make([]db.Video, 0, len(trailers))
+
+	for _, t := range trailers {
+		result = append(result, db.Video{
+			Hosting:   t.Hosting,
+			ID:        t.ID,
+			ImageURL:  t.ImageURL,
+			Kind:      t.Kind,
+			Name:      t.Name,
+			PlayerURL: t.PlayerURL,
+			URL:       t.URL,
+		})
 	}
 
 	return result
@@ -311,7 +392,7 @@ func mapSimilar(similar []map[string]interface{}, limit int) []db.Similar {
 
 		// Маппинг изображения
 		if img, ok := s["image"].(map[string]interface{}); ok {
-			sim.Image = shikimori.Image{
+			sim.Image = db.Image{
 				Original: "https://shikimori.one" + getString(img, "original"),
 				Preview:  "https://shikimori.one" + getString(img, "preview"),
 				X48:      "https://shikimori.one" + getString(img, "x48"),
