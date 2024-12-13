@@ -34,10 +34,9 @@ type Poster struct {
 }
 
 type Role struct {
-	Character    Character   `json:"character"`
-	Person       interface{} `json:"person"`
-	Roles        []string    `json:"roles"`
-	RolesRussian []string    `json:"roles_russian"`
+	Character    Character `json:"character"`
+	Roles        []string  `json:"roles"`
+	RolesRussian []string  `json:"roles_russian"`
 }
 
 type Character struct {

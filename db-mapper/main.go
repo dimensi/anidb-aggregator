@@ -245,9 +245,6 @@ func mapRoles(roles []map[string]interface{}) []db.Role {
 			}
 		}
 
-		// Маппинг person (может быть null)
-		role.Person = r["person"]
-
 		// Маппинг ролей
 		if roles, ok := r["roles"].([]interface{}); ok {
 			role.Roles = make([]string, 0, len(roles))
