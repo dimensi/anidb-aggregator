@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -62,7 +63,7 @@ func main() {
 	outputFile.WriteString(string(metadataJSON) + "\n")
 
 	// Читаем данные из файлов в мапы
-	anime365Data := make(map[int]anime365.Data)
+	anime365Data := make([]anime365.Data, 0)
 	shikimoriData := make(map[int]shikimori.Data)
 	jikanData := make(map[int]jikan.Data)
 
@@ -77,7 +78,7 @@ func main() {
 		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
 			continue
 		}
-		anime365Data[int(data.MyAnimeListID)] = data
+		anime365Data = append(anime365Data, data)
 		anime365Count++
 		fmt.Printf("\ranime365 Count: %d", anime365Count)
 	}
@@ -117,12 +118,13 @@ func main() {
 	}
 
 	// Добавим подсчет общего количества
-	totalAnime := len(anime365Data)
+	totalAnime := anime365Count
 	fmt.Println()
 	fmt.Printf("Начинаю обработку %d аниме...\n", totalAnime)
 
 	processed := 0
-	for malID, a365 := range anime365Data {
+	for _, a365 := range anime365Data {
+		malID := int(a365.MyAnimeListID)
 		shiki, hasShiki := shikimoriData[malID]
 		jikan, hasJikan := jikanData[malID]
 
@@ -131,7 +133,7 @@ func main() {
 		// Записываем результат в файл
 		jsonData, err := json.Marshal(resultAnime)
 		if err != nil {
-			log.Printf("Ошибка маршалинга для MAL ID %d: %v", malID, err)
+			log.Printf("��шибка маршалинга для MAL ID %d: %v", malID, err)
 			continue
 		}
 		outputFile.WriteString(string(jsonData) + "\n")
@@ -167,6 +169,8 @@ func mapToResultAnime(a365 anime365.Data, shiki shikimori.Data, hasShiki bool,
 		ID:               int(a365.ID),
 		MyAnimeListID:    int(a365.MyAnimeListID),
 		Type:             string(a365.Type),
+		TypeTitle:        a365.TypeTitle,
+		IsAiring:         int(a365.IsAiring),
 		Year:             int(a365.Year),
 		Season:           a365.Season,
 		NumberOfEpisodes: int(a365.NumberOfEpisodes),
@@ -296,17 +300,22 @@ func mapRoles(roles []map[string]interface{}) []db.Role {
 
 		// Маппинг ролей
 		if roles, ok := r["roles"].([]interface{}); ok {
-			role.Roles = make([]string, 0, len(roles))
+			role.RoleNames = make([]db.RoleName, 0, len(roles))
 			for _, r := range roles {
-				role.Roles = append(role.Roles, r.(string))
+				role.RoleNames = append(role.RoleNames, db.RoleName{
+					Name:    r.(string),
+					Russian: "", // Будет заполнено позже
+				})
 			}
 		}
 
 		// Маппинг русских названий ролей
 		if rolesRu, ok := r["roles_russian"].([]interface{}); ok {
-			role.RolesRussian = make([]string, 0, len(rolesRu))
-			for _, r := range rolesRu {
-				role.RolesRussian = append(role.RolesRussian, r.(string))
+			// Добавляем русские названия к существующим ролям
+			for i, r := range rolesRu {
+				if i < len(role.RoleNames) {
+					role.RoleNames[i].Russian = r.(string)
+				}
 			}
 		}
 
@@ -435,6 +444,9 @@ func mapEpisodesFromJikan(a365Episodes []anime365.Episode, jikanEpisodes []jikan
 	result := make([]db.Episode, 0, len(a365Episodes))
 
 	for _, ep := range a365Episodes {
+		// Конвертируем строку в число
+		episodeNum, _ := strconv.Atoi(ep.EpisodeInt)
+
 		// Ищем соответствующий эпизод в Jikan данных
 		var jikanEp *jikan.Episode
 		for _, jEp := range jikanEpisodes {
@@ -445,12 +457,14 @@ func mapEpisodesFromJikan(a365Episodes []anime365.Episode, jikanEpisodes []jikan
 		}
 
 		resultEp := db.Episode{
-			Number:                ep.EpisodeInt,
+			Number:                episodeNum,
 			Type:                  string(ep.EpisodeType),
+			Title:                 ep.EpisodeTitle,
 			FirstUploadedDateTime: ep.FirstUploadedDateTime,
 			ID:                    int(ep.ID),
 			IsActive:              int(ep.IsActive),
 			SeriesID:              int(ep.SeriesID),
+			IsFirstUploaded:       int(ep.IsFirstUploaded),
 		}
 
 		// Добавляем данные из Jikan если они есть
@@ -474,13 +488,17 @@ func mapEpisodesWithoutJikan(a365Episodes []anime365.Episode) []db.Episode {
 	result := make([]db.Episode, 0, len(a365Episodes))
 
 	for _, ep := range a365Episodes {
+		episodeNum, _ := strconv.Atoi(ep.EpisodeInt)
+
 		resultEp := db.Episode{
-			Number:                ep.EpisodeInt,
+			Number:                episodeNum,
 			Type:                  string(ep.EpisodeType),
+			Title:                 ep.EpisodeTitle,
 			FirstUploadedDateTime: ep.FirstUploadedDateTime,
 			ID:                    int(ep.ID),
 			IsActive:              int(ep.IsActive),
 			SeriesID:              int(ep.SeriesID),
+			IsFirstUploaded:       int(ep.IsFirstUploaded),
 		}
 		result = append(result, resultEp)
 	}

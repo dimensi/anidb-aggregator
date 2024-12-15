@@ -6,10 +6,12 @@ type Anime struct {
 	Score            string            `json:"score"`
 	Titles           map[string]string `json:"titles"`
 	Type             string            `json:"type"`
+	TypeTitle        string            `json:"typeTitle"`
 	Year             int               `json:"year"`
 	Season           string            `json:"season"`
 	NumberOfEpisodes int               `json:"numberOfEpisodes"`
 	Duration         int               `json:"duration"`
+	IsAiring         int               `json:"isAiring"`
 	AiredOn          string            `json:"airedOn"`
 	ReleasedOn       string            `json:"releasedOn"`
 	Descriptions     []Description     `json:"descriptions"`
@@ -65,10 +67,14 @@ type Poster struct {
 	Shikimori Image `json:"shikimori"`
 }
 
+type RoleName struct {
+	Name    string `json:"name"`
+	Russian string `json:"russian"`
+}
+
 type Role struct {
-	Character    Character `json:"character"`
-	Roles        []string  `json:"roles"`
-	RolesRussian []string  `json:"rolesRussian"`
+	Character Character  `json:"character"`
+	RoleNames []RoleName `json:"roleNames"`
 }
 
 type Character struct {
@@ -84,8 +90,9 @@ type Screenshot struct {
 }
 
 type Episode struct {
-	Number                string            `json:"number"`
+	Number                int               `json:"number"`
 	Type                  string            `json:"type"`
+	Title                 string            `json:"title"`
 	FirstUploadedDateTime string            `json:"firstUploadedDateTime"`
 	ID                    int               `json:"id"`
 	IsActive              int               `json:"isActive"`
@@ -93,6 +100,7 @@ type Episode struct {
 	AirDate               string            `json:"airDate"`
 	Titles                map[string]string `json:"titles"`
 	Rating                string            `json:"rating"`
+	IsFirstUploaded       int               `json:"isFirstUploaded"`
 }
 
 type Similar struct {
