@@ -88,6 +88,14 @@ func (s *Server) serveDBFiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filePath := filepath.Join(s.dbDir, filename)
+
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", fileInfo.Size()))
 	http.ServeFile(w, r, filePath)
 }
 
