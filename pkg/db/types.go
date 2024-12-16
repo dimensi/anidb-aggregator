@@ -104,14 +104,8 @@ type Episode struct {
 }
 
 type Similar struct {
-	AiredOn       string            `json:"airedOn"`
-	Episodes      int               `json:"episodes"`
-	EpisodesAired int               `json:"episodesAired"`
-	ID            int               `json:"id"`
+	MyAnimeListID int               `json:"myAnimeListId"`
 	Image         Image             `json:"image"`
-	Kind          string            `json:"kind"`
 	Titles        map[string]string `json:"titles"`
-	ReleasedOn    string            `json:"releasedOn"`
 	Score         string            `json:"score"`
-	Status        string            `json:"status"`
 }

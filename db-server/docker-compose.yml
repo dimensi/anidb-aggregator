@@ -1,0 +1,9 @@
+services:
+  db-server:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    command: ["-db-dir", "/app/data", "-port", "8080"]
+    ports:
+      - "8080:8080" 

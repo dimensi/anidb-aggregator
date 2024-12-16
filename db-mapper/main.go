@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -23,44 +25,45 @@ const (
 )
 
 func main() {
+	// Определяем флаги командной строки
+	inputDir := flag.String("input", ".", "Директория с входными файлами")
+	outputDir := flag.String("output", ".", "Директория для выходного файла")
+	flag.Parse()
+
 	// Открываем входные файлы
-	anime365File, err := os.Open("anime365-db.jsonl")
+	anime365File, err := os.Open(filepath.Join(*inputDir, "anime365-db.jsonl"))
 	if err != nil {
 		log.Fatalf("Failed to open anime365 file: %v", err)
 	}
 	defer anime365File.Close()
 
-	shikimoriFile, err := os.Open("shikimori-db.jsonl")
+	shikimoriFile, err := os.Open(filepath.Join(*inputDir, "shikimori-db.jsonl"))
 	if err != nil {
 		log.Fatalf("Failed to open shikimori file: %v", err)
 	}
 	defer shikimoriFile.Close()
 
-	jikanFile, err := os.Open("jikan-db.jsonl")
+	jikanFile, err := os.Open(filepath.Join(*inputDir, "jikan-db.jsonl"))
 	if err != nil {
 		log.Fatalf("Failed to open jikan file: %v", err)
 	}
 	defer jikanFile.Close()
 
-	// Создаем выходной файл
-	outputFile, err := os.Create("db.jsonl")
+	// Создаем выходной файл с timestamp в названии
+	timestamp := time.Now().Unix()
+	outputFileName := fmt.Sprintf("db_%d.jsonl", timestamp)
+	outputPath := filepath.Join(*outputDir, outputFileName)
+
+	// Создаем директорию для выходного файла, если её нет
+	if err := os.MkdirAll(*outputDir, 0755); err != nil {
+		log.Fatalf("Failed to create output directory: %v", err)
+	}
+
+	outputFile, err := os.Create(outputPath)
 	if err != nil {
 		log.Fatalf("Failed to create output file: %v", err)
 	}
 	defer outputFile.Close()
-
-	// Записываем метаданные в первую строку
-	metadata := struct {
-		Timestamp int64 `json:"timestamp"`
-	}{
-		Timestamp: time.Now().Unix(),
-	}
-
-	metadataJSON, err := json.Marshal(metadata)
-	if err != nil {
-		log.Fatalf("Failed to marshal metadata: %v", err)
-	}
-	outputFile.WriteString(string(metadataJSON) + "\n")
 
 	// Читаем данные из файлов в мапы
 	anime365Data := make([]anime365.Data, 0)
@@ -133,7 +136,7 @@ func main() {
 		// Записываем результат в файл
 		jsonData, err := json.Marshal(resultAnime)
 		if err != nil {
-			log.Printf("��шибка маршалинга для MAL ID %d: %v", malID, err)
+			log.Printf("Ошибка маршалинга для MAL ID %d: %v", malID, err)
 			continue
 		}
 		outputFile.WriteString(string(jsonData) + "\n")
@@ -385,18 +388,12 @@ func mapSimilar(similar []map[string]interface{}, limit int) []db.Similar {
 
 	for _, s := range similar {
 		sim := db.Similar{
-			AiredOn:       getString(s, "aired_on"),
-			Episodes:      getInt(s, "episodes"),
-			EpisodesAired: getInt(s, "episodes_aired"),
-			ID:            getInt(s, "id"),
-			Kind:          getString(s, "kind"),
-			ReleasedOn:    getString(s, "released_on"),
+			MyAnimeListID: getInt(s, "id"),
 			Titles: map[string]string{
 				"en": getString(s, "name"),
 				"ru": getString(s, "russian"),
 			},
-			Score:  getString(s, "score"),
-			Status: getString(s, "status"),
+			Score: getString(s, "score"),
 		}
 
 		// Маппинг изображения

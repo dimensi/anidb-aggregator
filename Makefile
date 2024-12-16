@@ -1,6 +1,6 @@
 # Определяем переменные
 BINARY_DIR = bin
-APPS = anime365-saver shikimori-saver db-mapper jikan-saver
+APPS = anime365-saver shikimori-saver db-mapper jikan-saver db-server
 GOOS ?= $(shell go env GOOS)
 GOARCH = amd64
 
@@ -54,6 +54,15 @@ run-jikan:
 run-db-mapper:
 	./$(BINARY_DIR)/db-mapper$(SUFFIX)
 
+.PHONY: run-db-server
+run-db-server:
+	./$(BINARY_DIR)/db-server$(SUFFIX)
+
+.PHONY: deploy-db-server
+deploy-db-server:
+	chmod +x deploy.sh && ./deploy.sh
+	scp ./dbs/* root@193.222.62.199:~/db-server/data/
+
 # Очистка бинарников
 .PHONY: clean
 clean:
@@ -69,8 +78,11 @@ help:
 	@echo "  make shikimori-saver - собрать только shikimori-saver"
 	@echo "  make db-mapper       - собрать только db-mapper"
 	@echo "  make jikan-saver - собрать только jikan-saver"
+	@echo "  make db-server    - собрать только db-server"
 	@echo "  make run-anime365   - запустить anime365-saver"
 	@echo "  make run-shikimori  - запустить shikimori-saver"
 	@echo "  make run-jikan      - запустить jikan-saver"
 	@echo "  make run-db-mapper  - запустить db-mapper"
+	@echo "  make run-db-server  - запустить db-server"
+	@echo "  make deploy-db-server - деплой db-server на продакшн"
 	@echo "  make clean          - удалить все бинарники"
