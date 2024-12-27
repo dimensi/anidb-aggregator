@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,7 +16,10 @@ import (
 	"dimensi/db-aggregator/pkg/anime365"
 	"dimensi/db-aggregator/pkg/db"
 	"dimensi/db-aggregator/pkg/jikan"
+	jikanapi "dimensi/db-aggregator/pkg/jikan/api"
+	"dimensi/db-aggregator/pkg/ratelimiter"
 	"dimensi/db-aggregator/pkg/shikimori"
+	shikiapi "dimensi/db-aggregator/pkg/shikimori/api"
 )
 
 const (
@@ -30,24 +34,17 @@ func main() {
 	outputDir := flag.String("output", ".", "Директория для выходного файла")
 	flag.Parse()
 
-	// Открываем входные файлы
+	// Открываем входной файл anime365
 	anime365File, err := os.Open(filepath.Join(*inputDir, "anime365-db.jsonl"))
 	if err != nil {
 		log.Fatalf("Failed to open anime365 file: %v", err)
 	}
 	defer anime365File.Close()
 
-	shikimoriFile, err := os.Open(filepath.Join(*inputDir, "shikimori-db.jsonl"))
-	if err != nil {
-		log.Fatalf("Failed to open shikimori file: %v", err)
-	}
-	defer shikimoriFile.Close()
-
-	jikanFile, err := os.Open(filepath.Join(*inputDir, "jikan-db.jsonl"))
-	if err != nil {
-		log.Fatalf("Failed to open jikan file: %v", err)
-	}
-	defer jikanFile.Close()
+	// Создаем клиенты API
+	httpClient := &http.Client{}
+	shikimoriClient := shikiapi.NewClient(httpClient, ratelimiter.New(3, 70))
+	jikanClient := jikanapi.NewClient(httpClient, ratelimiter.New(3, 60))
 
 	// Создаем выходной файл с timestamp в названии
 	timestamp := time.Now().Unix()
@@ -65,12 +62,8 @@ func main() {
 	}
 	defer outputFile.Close()
 
-	// Читаем данные из файлов в мапы
+	// Читаем данные из anime365
 	anime365Data := make([]anime365.Data, 0)
-	shikimoriData := make(map[int]shikimori.Data)
-	jikanData := make(map[int]jikan.Data)
-
-	// Читаем anime365 данные
 	fmt.Println("Читаем anime365 данные")
 	scanner := bufio.NewScanner(anime365File)
 	buf := make([]byte, 10*1024*1024)
@@ -86,64 +79,32 @@ func main() {
 		fmt.Printf("\ranime365 Count: %d", anime365Count)
 	}
 
-	// Читаем shikimori данные
-	fmt.Println()
-	fmt.Println("Читаем shikimori данные")
-	scanner = bufio.NewScanner(shikimoriFile)
-	scanner.Buffer(buf, 10*1024*1024)
-	shikimoriCount := 0
-	for scanner.Scan() {
-		var data shikimori.Data
-		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
-			log.Printf("Error parsing shikimori data: %v", err)
-			continue
-		}
-		shikimoriData[data.MyAnimeListID] = data
-		shikimoriCount++
-		fmt.Printf("\rshikimori Count: %d", shikimoriCount)
-	}
-
-	// Читаем jikan данные
-	fmt.Println()
-	fmt.Println("Читаем jikan данные")
-	scanner = bufio.NewScanner(jikanFile)
-	scanner.Buffer(buf, 10*1024*1024)
-	jikanCount := 0
-	for scanner.Scan() {
-		var data jikan.Data
-		if err := json.Unmarshal(scanner.Bytes(), &data); err != nil {
-			log.Printf("Error parsing jikan data: %v", err)
-			continue
-		}
-		jikanData[data.MyAnimeListID] = data
-		jikanCount++
-		fmt.Printf("\rjikan Count: %d", jikanCount)
-	}
-
-	// Добавим подсчет общего количества
+	// Обработка каждого аниме
 	totalAnime := anime365Count
-	fmt.Println()
-	fmt.Printf("Начинаю обработку %d аниме...\n", totalAnime)
+	fmt.Printf("\nНачинаю обработку %d аниме...\n", totalAnime)
 
 	processed := 0
 	for _, a365 := range anime365Data {
-		malID := int(a365.MyAnimeListID)
-		shiki, hasShiki := shikimoriData[malID]
-		jikan, hasJikan := jikanData[malID]
 
-		resultAnime := mapToResultAnime(a365, shiki, hasShiki, jikan, hasJikan)
+		// Получаем данные Shikimori
+		shikiData, hasShiki := shikimoriClient.FetchAnimeData(int(a365.MyAnimeListID))
+
+		// Получаем данные Jikan
+		jikanData, hasJikan := jikanClient.FetchAnimeData(int(a365.MyAnimeListID))
+
+		resultAnime := mapToResultAnime(a365, shikiData, hasShiki, jikanData, hasJikan)
 
 		// Записываем результат в файл
 		jsonData, err := json.Marshal(resultAnime)
 		if err != nil {
-			log.Printf("Ошибка маршалинга для MAL ID %d: %v", malID, err)
+			log.Printf("Ошибка маршалинга для MAL ID %d: %v", int(a365.MyAnimeListID), err)
 			continue
 		}
 		outputFile.WriteString(string(jsonData) + "\n")
 
 		// Обновляем прогресс
 		processed++
-		if processed%100 == 0 || processed == totalAnime {
+		if processed%10 == 0 || processed == totalAnime {
 			progress := float64(processed) / float64(totalAnime) * 100
 			fmt.Printf("\rПрогресс: [%-50s] %.1f%% (%d/%d)",
 				strings.Repeat("=", int(progress/2))+">",
@@ -199,7 +160,8 @@ func mapToResultAnime(a365 anime365.Data, shiki shikimori.Data, hasShiki bool,
 		resultAnime.ReleasedOn = shiki.ShikimoriData.ReleasedOn
 		resultAnime.Duration = int(shiki.ShikimoriData.Duration)
 		resultAnime.Roles = mapRoles(shiki.Roles)
-		resultAnime.Screenshots = mapScreenshots(shiki.Screenshots, ScreenshotsLimit)
+		resultAnime.Screenshots = mapScreenshotsBase(shiki.ShikimoriData.Screenshots)
+		// resultAnime.Screenshots = mapScreenshots(shiki.Screenshots, ScreenshotsLimit)
 		resultAnime.Similar = mapSimilar(shiki.Similar, SimilarLimit)
 		resultAnime.Studios = mapStudios(shiki.ShikimoriData.Studios)
 		resultAnime.Trailers = mapTrailers(shiki.ShikimoriData.Videos)
@@ -360,28 +322,41 @@ func mapTrailers(trailers []shikimori.Video) []db.Video {
 	return result
 }
 
-func mapScreenshots(screenshots []map[string]interface{}, limit int) []db.Screenshot {
+func mapScreenshotsBase(screenshots []shikimori.Screenshot) []db.Screenshot {
 	result := make([]db.Screenshot, 0, len(screenshots))
 
 	for _, s := range screenshots {
-		screenshot := db.Screenshot{}
-
-		if original, ok := s["original"].(string); ok {
-			screenshot.Original = original
-		}
-		if preview, ok := s["preview"].(string); ok {
-			screenshot.Preview = preview
-		}
-
-		result = append(result, screenshot)
-
-		if len(result) >= limit {
-			break
-		}
+		result = append(result, db.Screenshot{
+			Original: s.Original,
+			Preview:  s.Preview,
+		})
 	}
 
 	return result
 }
+
+// func mapScreenshots(screenshots []map[string]interface{}, limit int) []db.Screenshot {
+// 	result := make([]db.Screenshot, 0, len(screenshots))
+
+// 	for _, s := range screenshots {
+// 		screenshot := db.Screenshot{}
+
+// 		if original, ok := s["original"].(string); ok {
+// 			screenshot.Original = original
+// 		}
+// 		if preview, ok := s["preview"].(string); ok {
+// 			screenshot.Preview = preview
+// 		}
+
+// 		result = append(result, screenshot)
+
+// 		if len(result) >= limit {
+// 			break
+// 		}
+// 	}
+
+// 	return result
+// }
 
 func mapSimilar(similar []map[string]interface{}, limit int) []db.Similar {
 	result := make([]db.Similar, 0, limit)

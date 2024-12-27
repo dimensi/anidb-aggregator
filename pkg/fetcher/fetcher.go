@@ -13,6 +13,7 @@ type Config struct {
 	MaxRetries      int
 	RetryDelay      time.Duration
 	RetryMultiplier int
+	EnableLogging   bool
 }
 
 func DefaultConfig() Config {
@@ -20,12 +21,19 @@ func DefaultConfig() Config {
 		MaxRetries:      3,
 		RetryDelay:      time.Second * 10,
 		RetryMultiplier: 2,
+		EnableLogging:   false,
 	}
 }
 
 func FetchWithRetry(client *http.Client, url string, rateLimiter *ratelimiter.RateLimiter, config Config) ([]byte, error) {
+	logf := func(format string, v ...interface{}) {
+		if config.EnableLogging {
+			log.Printf(format, v...)
+		}
+	}
+
 	for attempt := 1; attempt <= config.MaxRetries; attempt++ {
-		log.Printf("Fetching URL: %s (attempt %d/%d)", url, attempt, config.MaxRetries)
+		logf("Fetching URL: %s (attempt %d/%d)", url, attempt, config.MaxRetries)
 
 		rateLimiter.Wait()
 
@@ -43,7 +51,7 @@ func FetchWithRetry(client *http.Client, url string, rateLimiter *ratelimiter.Ra
 		if resp.StatusCode == 429 {
 			if attempt < config.MaxRetries {
 				delay := config.RetryDelay * time.Duration(attempt*config.RetryMultiplier)
-				log.Printf("Rate limit exceeded, waiting %v before retry...", delay)
+				logf("Rate limit exceeded, waiting %v before retry...", delay)
 				time.Sleep(delay)
 				continue
 			}
@@ -54,7 +62,7 @@ func FetchWithRetry(client *http.Client, url string, rateLimiter *ratelimiter.Ra
 			return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 		}
 
-		log.Printf("Successfully fetched URL: %s", url)
+		logf("Successfully fetched URL: %s", url)
 		return body, nil
 	}
 
